@@ -55,7 +55,7 @@ app.post('/api/shorturl', function(req, res) {
         if(result === null) {
            responseObject['original_url'] = originalUrl
            responseObject['short_url'] = 1
-        } else if (result) {
+        } else {
            responseObject['original_url'] = originalUrl
            responseObject['short_url'] = result.short_url + 1
         }
