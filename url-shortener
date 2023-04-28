@@ -30,55 +30,90 @@ app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Your first API endpoint
-app.get('/api/hello', function(req, res) {
-  res.json({ greeting: 'hello API' });
-});
-
 app.post('/api/shorturl', function(req, res) {
   let originalUrl = req.body.url
   let shortUrl = 1;
 
+
   let checkUrl = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/
 .test(originalUrl);
+
 
   if(!checkUrl) {
     res.json({error: 'invalid url'})
     return;
   } else {
-    Url.findOne({})
-      .sort({ short_url: 'desc' })
-      .then(result => {
+    // Check if there is an existing url
+
+    let responseObject = {}
+    
+    Url.countDocuments({}).then( data => {
+      if(data === 0) {
+        responseObject['original_url'] = originalUrl
+        responseObject['short_url'] = 1
+
+        const sendUrl = new Url({
+        original_url: responseObject['original_url'],
+        short_url: responseObject['short_url']
+      });
         
-        let responseObject = {};
-        
-        if(result === null) {
-           responseObject['original_url'] = originalUrl
-           responseObject['short_url'] = 1
-        } else {
-           responseObject['original_url'] = originalUrl
-           responseObject['short_url'] = result.short_url + 1
-        }
-
-       const newUrl = new Url({
-          original_url: responseObject['original_url'],
-          short_url: responseObject['short_url'],
-        });
-
-        newUrl.save()
-              .then(() => {
-                res.json(responseObject)
-        })
-        .catch(err => {
-          console.log(err)
-        })
-
+      sendUrl.save()
+          .then(() => {
+          res.json(responseObject)
       })
       .catch(err => {
-        console.log(err)
+        console.log('send: ', err);
       })
+        
+      } else {
+        //find the url record if there is one
+        
+        Url.findOne({})
+            .sort({ short_url: 'desc' })
+            .then(data => {
+                let shortUrl = data.short_url
+
+              Url.findOne({original_url: originalUrl})
+                  .then(data => {
+                    if (data === null) {
+                      responseObject['original_url'] = originalUrl;
+                      responseObject['short_url'] = shortUrl + 1;
+
+                      const sendUrl = new Url({
+                        original_url: responseObject.original_url,
+                        short_url: responseObject.short_url
+                      })
+
+                      sendUrl.save()
+                        .then(() => {
+                          res.json(responseObject)
+                        })
+                      .catch(err => {
+                        console.log('record', err)
+                      })
+                    } else {
+                      responseObject['original_url'] = data.original_url;
+                      responseObject['short_url'] = data.short_url;
+
+                      res.json(responseObject);
+                    }
+                  })
+                  .catch(err => {
+                    console.log('find record', err)
+                  })
+              
+            })
+            .catch(err => {
+              console.log('record: ', err)
+            }) 
+      }
+    })
+    .catch(err => {
+      console.log('count: ', err)
+    })
   }
 });
+
 
 app.get('/api/shorturl/:short_url', function(req, res) {
   let shortUrl = req.params.short_url;
@@ -95,10 +130,6 @@ app.get('/api/shorturl/:short_url', function(req, res) {
       res.json({error: "invalid short url"})
     })
 })
-
-
-
-
 
 
 app.listen(port, function() {
