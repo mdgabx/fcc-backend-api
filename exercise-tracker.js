@@ -20,16 +20,12 @@ let exerciseSchema = new mongoose.Schema({
 
 let userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-})
-
-let logSchema = new mongoose.Schema({
   logs: [exerciseSchema]
 })
 
 
 let User = mongoose.model('User', userSchema);
 let Exercise = mongoose.model('Exercise', exerciseSchema);
-let Log = mongoose.model('Log', logSchema);
 
 app.use(cors())
 app.use(bodyParser.urlencoded({ extended: false })) // use bodyParser
@@ -67,6 +63,37 @@ app.get('/api/users', (req, res) => {
         res.status(500).json({error: 'Server error'})      
   })
 })
+
+// post '/api/users/:id/exercises'
+app.post('/api/users/:_id/exercises', (req, res) => {
+  const { _id } = req.params;
+  const { description, duration, date } = req.body;
+  
+  const exercise = {
+    description,
+    duration: parseInt(duration),
+    date: date ? new Date(date) : new Date()
+  };
+  
+  User.findByIdAndUpdate(_id, {
+    $push: { exercises: exercise }
+  }, { new: true })
+    .then(user => {
+      res.json({
+        _id: user._id,
+        username: user.username,
+        date: exercise.date.toDateString(),
+        duration: exercise.duration,
+        description: exercise.description
+      });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ error: 'Server error' });
+    });
+});
+
+
 
 
 
