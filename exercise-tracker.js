@@ -100,10 +100,18 @@ app.get('/api/users/:_id/logs', (req, res) => {
 
   User.findById(_id)
       .then(user => {
-        const { username, log } = user
-        const count = log.length
-        
-        res.json({ _id, username, log, count })
+          const log = user.log.map(exercise => ({
+            description: exercise.description,
+            duration: exercise.duration,
+            date: new Date(exercise.date).toDateString()
+          }))
+    
+          res.json({
+          _id: user._id,
+          username: user.username,
+          count: log.length,
+          log: log
+        });
       })
       .catch(err => {
         console.log(err)
