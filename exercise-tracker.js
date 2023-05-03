@@ -20,7 +20,7 @@ let exerciseSchema = new mongoose.Schema({
 
 let userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  logs: [exerciseSchema]
+  log: [exerciseSchema]
 })
 
 
@@ -75,7 +75,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   };
   
   User.findByIdAndUpdate(_id, {
-    $push: { logs: exercise }
+    $push: { log: exercise }
   }, { new: true })
     .then(user => {
       res.json({
@@ -100,10 +100,10 @@ app.get('/api/users/:_id/logs', (req, res) => {
 
   User.findById(_id)
       .then(user => {
-        const { username, logs } = user
-        const count = logs.length
+        const { username, log } = user
+        const count = log.length
         
-        res.json({ _id, username, logs, count })
+        res.json({ _id, username, log, count })
       })
       .catch(err => {
         console.log(err)
