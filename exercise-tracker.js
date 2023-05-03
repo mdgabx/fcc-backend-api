@@ -42,7 +42,6 @@ app.post('/api/users', (req, res) => {
   
   newUser.save()
       .then((data) => {
-        console.log(data);
         res.json(newUser)
       })
       .catch(err => {
@@ -76,7 +75,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   };
   
   User.findByIdAndUpdate(_id, {
-    $push: { exercises: exercise }
+    $push: { logs: exercise }
   }, { new: true })
     .then(user => {
       res.json({
@@ -92,6 +91,26 @@ app.post('/api/users/:_id/exercises', (req, res) => {
       res.status(500).json({ error: 'Server error' });
     });
 });
+
+
+// You can make a GET request to /api/users/:_id/logs to retrieve a full exercise log of any user.
+
+app.get('/api/users/:_id/logs', (req, res) => {
+  const { _id } = req.params
+
+  User.findById(_id)
+      .then(user => {
+        const { username, logs } = user
+        const count = logs.length
+        
+        res.json({ _id, username, logs, count })
+      })
+      .catch(err => {
+        console.log(err)
+        res.status(500).json({ error: 'Invalid' })
+      })
+});
+
 
 
 
