@@ -10,6 +10,7 @@ var mongoose = require('mongoose');
 
 // multer 
 var multer = require('multer');
+var upload = multer({ dest: 'uploads/' })
 
 require('dotenv').config()
 
@@ -24,9 +25,18 @@ app.get('/', function (req, res) {
 
 // main functionality here
 
-
-
-
+app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: 'No file selected.' });
+    return;
+  }
+  
+  res.json({
+    name: req.file.originalname,
+    type: req.file.mimetype,
+    size: req.file.size
+  });
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
