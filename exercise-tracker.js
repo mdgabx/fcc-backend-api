@@ -95,33 +95,46 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 
 // You can make a GET request to /api/users/:_id/logs to retrieve a full exercise log of any user.
 
+// You can add from, to and limit parameters to a GET /api/users/:_id/logs request to retrieve part of the log of any user. from and to are dates in yyyy-mm-dd format. limit is an integer of how many logs to send back.
+
 app.get('/api/users/:_id/logs', (req, res) => {
-  const { _id } = req.params
-
+  const { _id } = req.params;
+  const { from, to, limit } = req.query;
+  
   User.findById(_id)
-      .then(user => {
-          const log = user.log.map(exercise => ({
-            description: exercise.description,
-            duration: exercise.duration,
-            date: new Date(exercise.date).toDateString()
-          }))
-    
-          res.json({
-          _id: user._id,
-          username: user.username,
-          count: log.length,
-          log: log
-        });
-      })
-      .catch(err => {
-        console.log(err)
-        res.status(500).json({ error: 'Invalid' })
-      })
+    .then(user => {
+      let logs = user.log;
+      
+      // apply filters based on query parameters
+      if (from) {
+        logs = logs.filter(log => new Date(log.date) >= new Date(from));
+      }
+      if (to) {
+        logs = logs.filter(log => new Date(log.date) <= new Date(to));
+      }
+      if (limit) {
+        logs = logs.slice(0, limit);
+      }
+      
+      // convert dates to dateString format
+      logs = logs.map(log => ({
+        description: log.description,
+        duration: log.duration,
+        date: new Date(log.date).toDateString()
+      }));
+      
+      res.json({
+        _id: user._id,
+        username: user.username,
+        count: logs.length,
+        log: logs
+      });
+    })
+    .catch(err => {
+      console.log(err)
+      res.status(500).json({ error: 'Invalid' })
+    });
 });
-
-
-
-
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
